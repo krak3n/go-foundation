@@ -1,6 +1,9 @@
 package foundation
 
-import "sync"
+import (
+	"slices"
+	"sync"
+)
 
 type EventHookFunc func()
 
@@ -46,5 +49,8 @@ func (e *eventHooks) get(event eventHook) []EventHookFunc {
 	e.mtx.RLock()
 	defer e.mtx.RUnlock()
 
-	return e.hooks[event]
+	hooks := slices.Clone(e.hooks[event])
+	slices.Reverse(hooks)
+
+	return hooks
 }
