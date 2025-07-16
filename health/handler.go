@@ -25,14 +25,14 @@ func ServeMux(prefix string, handler http.Handler) *http.ServeMux {
 
 // A Handler is a HTTP handler for serving the HTTP health check endpoint.
 type Handler struct {
-	sensors   []probe.Sensor
+	registry  SensorRegistry
 	marshaler ReportsMarshaler
 }
 
 // JSONHandler returns a JSON HTTP health check endpoint handler.
-func JSONHandler(sensors ...probe.Sensor) http.Handler {
+func JSONHandler() http.Handler {
 	return &Handler{
-		sensors:   sensors,
+		registry:  DefaultSensorRegistry(),
 		marshaler: JSONReportMarshaler(),
 	}
 }
@@ -53,7 +53,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	sensors := slices.DeleteFunc(slices.Clone(h.sensors), func(s probe.Sensor) bool {
+	sensors := slices.DeleteFunc(slices.Clone(h.registry.Sensors()), func(s probe.Sensor) bool {
 		return s.Mode()&mode == 0
 	})
 

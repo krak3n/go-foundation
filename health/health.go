@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"go.krak3n.io/foundation"
-	"go.krak3n.io/foundation/health/probe"
 )
 
 func Run(runners ...foundation.Runner) foundation.Runner {
@@ -47,7 +46,7 @@ func (r *Runner) Run(ctx context.Context, f foundation.F) {
 
 	f.Run(ctx, r.runners...)
 
-	server.Handler = ServeMux("/_health", JSONHandler(probe.Sensors()...))
+	server.Handler = ServeMux("/_health", JSONHandler())
 
 	go func() {
 		defer wg.Done()
