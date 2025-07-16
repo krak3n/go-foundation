@@ -107,14 +107,6 @@ func Run(name string, runner Runner) {
 	// Wait for go routines to exit
 	wg.Wait()
 
-	// Execute finalisers and log their errors.
-	for _, fn := range f.finalisers {
-		if err := fn(); err != nil {
-			exitCode = 1
-			slog.Error(err.Error())
-		}
-	}
-
 	// Call os.Exit once everything is done, if we erroed this will be a none zero exit code.
 	os.Exit(exitCode)
 }

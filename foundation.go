@@ -24,15 +24,6 @@ type F interface {
 	// On returns an EventHook that allows functions to be exeuted when a specifc event happens.
 	On() EventHook
 
-	// Finally adds the given finaliser func to the root foudnation.F to be executed once all runners and cleanups
-	// have completed.
-	//
-	// Calling f.Run(), f.Go(), f.Error() or f.Cleanup() from within a finaliser function will be no-op.
-	//
-	// Errors returned by a finaliser function will be handled in foundation.Run.
-	// TODO: do we actually need this?
-	Finally(func() error)
-
 	// Error causes execution to exit immediately unless called from within a clean up function in which case the error
 	// will just be logged.
 	Error(error)
@@ -67,8 +58,6 @@ type f struct {
 	name string
 	// Sub functions that are children of this F.
 	subs []*f
-	// Functions to call once the function all funners and cleanups have completed.
-	finalisers []func() error
 	// Guards the fields to prevent race conditions.
 	mtx sync.RWMutex
 	// Indicates the function has run and has finished execution.
@@ -179,35 +168,6 @@ func (f *f) Error(err error) {
 // On returns an event hook to add functions which will be called when specific events occur.
 func (f *f) On() EventHook {
 	return f.hooks
-}
-
-// Finally adds the given finaliser func to the root foudnation.F to be executed once all runners and cleanups
-// have completed.
-//
-// Calling f.Run(), f.Go() or f.Cleanup() from within a finaliser function will be no-op as they be executed once everything has stopped.
-//
-// Calling f.Error() from within a finaliser function will be caught and handled.
-func (f *f) Finally(fn func() error) {
-	if f.erred.Load() || f.done.Load() {
-		return
-	}
-
-	root := f
-	parent := f.parent
-
-	for {
-		if parent == nil { // we are at the root
-			break
-		}
-
-		root = parent
-		parent = parent.parent
-	}
-
-	// Add the finaliser func
-	root.mtx.Lock()
-	root.finalisers = append(root.finalisers, fn)
-	root.mtx.Unlock()
 }
 
 func (f *f) stop() {
