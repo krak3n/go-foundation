@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.krak3n.io/foundation"
 	"go.krak3n.io/foundation/health"
@@ -21,8 +22,6 @@ func main() {
 			})
 
 			f.Run(ctx, foundation.RunFunc(func(ctx context.Context, f foundation.F) {
-				f.Parallel()
-
 				probe.Register(probe.NewSensor("sensor1", probe.AllModes, func(context.Context) error {
 					return nil
 				}))
@@ -39,14 +38,16 @@ func main() {
 				})
 
 				fmt.Println("block on c", f.Name())
+
+				time.Sleep(time.Second * 5)
+				f.Parallel()
 				<-c
+
 				fmt.Println("c unblocked", f.Name())
 			}))
 		}))
 
 		f.Run(ctx, foundation.RunFunc(func(ctx context.Context, f foundation.F) {
-			f.Parallel()
-
 			probe.Register(probe.NewSensor("sensor2", probe.StartupLivenessMode, func(context.Context) error {
 				return nil
 			}))
@@ -55,6 +56,7 @@ func main() {
 
 			f.On().Stop(func() {
 				fmt.Println("close c", f.Name())
+				time.Sleep(time.Second * 5)
 				close(c)
 			})
 
@@ -63,10 +65,13 @@ func main() {
 			})
 
 			fmt.Println("block on c", f.Name())
+
+			f.Parallel()
 			<-c
+
 			fmt.Println("c unblocked", f.Name())
 		}))
 	})
 
-	foundation.Run("health", health.Run(runner))
+	foundation.Run("health-example", health.Run(runner))
 }
